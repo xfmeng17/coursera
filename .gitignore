@@ -1,6 +1,8 @@
 # Dir
-software
-zip
+software/
+zip/
+application/
+installer/
 
 # Racket compiled files
 *.dep
