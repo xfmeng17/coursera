@@ -3,6 +3,7 @@ software/
 zip/
 application/
 installer/
+*/.DS_Store
 
 # Racket compiled files
 *.dep
