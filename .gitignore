@@ -3,7 +3,9 @@ software/
 zip/
 application/
 installer/
-*/.DS_Store
+
+# macbook system file
+*.DS_Store
 
 # Racket compiled files
 *.dep
