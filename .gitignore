@@ -11,3 +11,6 @@ installer/
 *.dep
 *.zo
 
+#temp files
+*.*~
+
