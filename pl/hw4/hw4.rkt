@@ -12,7 +12,7 @@
 
 ;; 2. string-append-map
 (define (string-append-map xs suffix)
-  (map (lambda (x) (string-append suffix x)) xs))
+  (map (lambda (x) (string-append x suffix)) xs))
 
 ;; 3. list-nth-mod
 (define (list-nth-mod xs n)
@@ -20,12 +20,22 @@
         [(null? xs) (error "list-nth-mod: empty list")]
         [#t (car (list-tail xs (remainder n (length xs))))]))
 
-;;4. stream-for-n-steps
+;; 4. stream-for-n-steps
+
+;(define (stream-for-n-steps s n)
+;  (if (= n 0)
+;      null
+;      (cons (car (s)) (stream-for-n-steps (cdr (s)) (- n 1)))))
+
+;; wrong version above case
+;; each thunk in the stream should be evaluated at most once, which is why the code below
+;; has a let-expression rather than (car (s)) and (cdr (s))
 (define (stream-for-n-steps s n)
   (if (= n 0)
       null
-      (cons (car (s)) (stream-for-n-steps (cdr (s)) (- n 1)))))
-
+      (let ([next (s)])
+        (cons (car next) (stream-for-n-steps (cdr next) (- n 1))))))
+  
 ;; 5. funny-number-stream
 (define funny-number-stream
   (letrec ([f (lambda (x)
@@ -35,9 +45,18 @@
     (lambda () (f 1))))
 
 ;; 6. dan-then-dog
+;(define dan-then-dog
+;  (letrec ([f (lambda (flag)
+;                (if (flag)
+;                    (cons "dan.jpg" (lambda () (f #f)))
+;                    (cons "dog.jpg" (lambda () (f #t)))))])
+;    (lambda () (f #t))))
+
+;; I write (flag) but not flag above, parentheses matters!!!
+
 (define dan-then-dog
-  (letrec ([f (lambda (flag)
-                (if (flag)
+  (letrec ([f (lambda (b) 
+                (if b
                     (cons "dan.jpg" (lambda () (f #f)))
                     (cons "dog.jpg" (lambda () (f #t)))))])
     (lambda () (f #t))))
@@ -47,7 +66,7 @@
   (lambda () (cons (cons 0 (car (s))) (stream-add-zero (cdr (s))))))
 
 ;; 8. cycle-lists
-(define (cyele-lists xs ys)
+(define (cycle-lists xs ys)
   (letrec ([f (lambda (n)
                 (cons
                  (cons (list-nth-mod xs n) (list-nth-mod ys n))
@@ -72,25 +91,27 @@
            [next 0]
            [f (lambda (v)
                 (let ([ans (vector-assoc v memo)])
-                      (if ans
-                          ans
-                          (let ([new-ans (assoc v xs)])
-                            (begin
-                              (vector-set! memo next new-ans)
-                              (set! next (remainder (+ next 1) n))
-                              new-ans)))))])
-  f))
+                  (if ans
+                      ans
+                      (let ([new-ans (assoc v xs)])
+                        (begin
+                          (vector-set! memo next new-ans)
+                          (set! next (remainder (+ next 1) n))
+                          new-ans)))))])
+    f))
 
 ;; 11. macro
 (define-syntax while-less
   (syntax-rules (do)
     [(while-less e1 do e2)
-     (letrec ([x e1]
-              [loop (lambda ()
-                      (if (< e2 x)
-                          (f)
-                          #t))])
-       (loop))]))
+     (let ([x e1])
+       (letrec ([loop (lambda ()
+                        (let ([y e2])
+                          (if (or (not (number? y)) (>= y x))
+                              #t
+                              (loop))))])
+         (loop)))]))
+              
        
 
 
