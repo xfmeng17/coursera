@@ -63,7 +63,9 @@
 
 ;; 7. stream-add-zero
 (define (stream-add-zero s)
-  (lambda () (cons (cons 0 (car (s))) (stream-add-zero (cdr (s))))))
+  (lambda ()
+    (let ([next (s)])
+      (cons (cons 0 (car next)) (stream-add-zero (cdr next))))))
 
 ;; 8. cycle-lists
 (define (cycle-lists xs ys)
@@ -96,8 +98,7 @@
                       (let ([new-ans (assoc v xs)])
                         (begin
                           (vector-set! memo next new-ans)
-                          (set! next (remainder (+ next 1) n))
-                          new-ans)))))])
+                          (set! next (remainder (+ next 1) n)) new-ans)))))])
     f))
 
 ;; 11. macro
