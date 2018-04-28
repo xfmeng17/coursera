@@ -23,14 +23,7 @@
 ;; Problem 1
 
 ;; CHANGE (put your solutions here)
-;; (a)
-(define (racketlist->mupllist list)
-  (letrec ([f (lambda (s)
-                (if (null? s)
-                    (aunit)
-                    (apair (car s) (f (cdr s)))))])
-    (f list)))
-  
+
 ;; Problem 2
 
 ;; lookup a variable in an environment
