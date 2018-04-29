@@ -5,7 +5,7 @@
 
 ;; Be sure to put your homework file in the same folder as this test file.
 ;; Uncomment the line below and, if necessary, change the filename
-;;(require "hw5")
+(require "hw5.rkt")
 
 (require rackunit)
 
@@ -17,7 +17,7 @@
    (check-equal? (racketlist->mupllist (list (int 3) (int 4))) (apair (int 3) (apair (int 4) (aunit))) "racketlist->mupllist test")
    
    ;; check mupllist to racketlist with normal list
-   (check-equal? (mupllist->racketlist (apair (int 3) (apair (int 4) (aunit)))) (list (int 3) (int 4)) "racketlist->mupllist test")
+   (check-equal? (mupllist->racketlist (apair (int 3) (apair (int 4) (aunit)))) (list (int 3) (int 4)) "mupllist->racketlist test")
 
    ;; tests if ifgreater returns (int 2)
    (check-equal? (eval-exp (ifgreater (int 3) (int 4) (int 3) (int 2))) (int 2) "ifgreater test")
@@ -57,4 +57,4 @@
 
 (require rackunit/text-ui)
 ;; runs the test
-(run-tests tests)
+`(run-tests tests)

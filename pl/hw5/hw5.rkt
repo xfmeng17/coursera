@@ -30,7 +30,15 @@
                     (aunit)
                     (apair (car s) (f (cdr s)))))])
     (f list)))
-  
+
+;; (b)
+(define (mupllist->racketlist list)
+  (letrec ([f (lambda (x)
+                (if (aunit? x)
+                    null
+                    (cons (apair-e1 x) (f (apair-e2 x)))))])
+    (f list)))
+
 ;; Problem 2
 
 ;; lookup a variable in an environment
