@@ -73,7 +73,11 @@
                    (eval-under-env (ifgreater-e3 e) env)
                    (eval-under-env (ifgreater-e4 e) env))
                (error "MUPL ifgreater applied to non-number")))]
-        [(fun? e) (closure env e)]
+        [(fun? e)
+         (let ([name (fun-nameopt e)])
+           (if name
+               (closure (cons (cons name env) env) e)
+               (closure env e)))]
         [(apair? e)
          (let ([v1 (eval-under-env (apair-e1 e) env)]
                [v2 (eval-under-env (apair-e2 e) env)])
@@ -95,6 +99,15 @@
          (let ([v (mlet-var e)]
                [exp (eval-under-env (mlet-e e) env)])
            (eval-under-env (mlet-body e) (cons (cons v exp) env)))]
+        [(call? e)
+         (let ([clos (call-funexp e)]
+               [parm (eval-under-env (call-actual e) env)])
+           (if (closure? clos)
+               (let ([form (fun-formal (closure-fun clos))]
+                     [body (fun-body (closure-fun clos))]
+                     [envr (closure-env clos)])
+                 (eval-under-env body (cons (cons form parm) envr)))
+               (error "MUPL call applied to non-closure")))]
         [#t (error (format "bad MUPL expression: ~v" e))]))
 
 ;; Do NOT change
