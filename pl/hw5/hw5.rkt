@@ -116,11 +116,27 @@
         
 ;; Problem 3
 
-(define (ifaunit e1 e2 e3) "CHANGE")
+(define (ifaunit e1 e2 e3)
+  (if (aunit? e1) e2 e3))
 
-(define (mlet* lstlst e2) "CHANGE")
+(define (mlet* lstlst e2)
+  (letrec ([f (lambda (lst env)
+             (if (null? lst)
+                 null
+                 (let* ([s (car (car lst))]
+                        [e (eval-under-env (cdr (car lst)) env)]
+                        [p (cons s e)])
+                   (cons p (f (cdr lst) (cons env p))))))])
+    (eval-under-env e2 (f lstlst null))))
 
-(define (ifeq e1 e2 e3 e4) "CHANGE")
+(define (ifeq e1 e2 e3 e4)
+  (let ([v1 (eval-under-env e1 null)]
+        [v2 (eval-under-env e2 null)])
+    (if (and (int? v1) (int? v2))
+        (if (= (int-num v1) (int-num v2))
+            e3
+            e4)
+        (error "ifeq e1 and/or e2 applied to non-number"))))
 
 ;; Problem 4
 
