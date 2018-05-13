@@ -78,6 +78,7 @@
            (if name
                (closure (cons (cons name env) env) e)
                (closure env e)))]
+        [(closure? e) e]
         [(apair? e)
          (let ([v1 (eval-under-env (apair-e1 e) env)]
                [v2 (eval-under-env (apair-e2 e) env)])
@@ -100,7 +101,7 @@
                [exp (eval-under-env (mlet-e e) env)])
            (eval-under-env (mlet-body e) (cons (cons v exp) env)))]
         [(call? e)
-         (let ([clos (call-funexp e)]
+         (let ([clos (eval-under-env (call-funexp e) env)]
                [parm (eval-under-env (call-actual e) env)])
            (if (closure? clos)
                (let ([form (fun-formal (closure-fun clos))]
