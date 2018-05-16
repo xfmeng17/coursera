@@ -64,18 +64,51 @@
                        (int-num v2)))
                (error "MUPL addition applied to non-number")))]
         ;; CHANGE add more cases here
-        ;; [(int? e) (int-num e)]
+        [(int? e) e]
         [(ifgreater? e)
-         (print "hi")
          (let ([v1 (eval-under-env (ifgreater-e1 e) env)]
-               [v2 (eval-under-env (ifgreater-e2 e) env)]
-               [v3 (eval-under-env (ifgreater-e3 e) env)]
-               [v4 (eval-under-env (ifgreater-e4 e) env)])
+               [v2 (eval-under-env (ifgreater-e2 e) env)])
            (if (and (int? v1) (int? v2))
                (if (> (int-num v1) (int-num v2))
-                   v3
-                   v4)
+                   (eval-under-env (ifgreater-e3 e) env)
+                   (eval-under-env (ifgreater-e4 e) env))
                (error "MUPL ifgreater applied to non-number")))]
+        [(fun? e)
+         (let ([name (fun-nameopt e)])
+           (if name
+               (closure (cons (cons name env) env) e)
+               (closure env e)))]
+        [(closure? e) e]
+        [(apair? e)
+         (let ([v1 (eval-under-env (apair-e1 e) env)]
+               [v2 (eval-under-env (apair-e2 e) env)])
+           (apair v1 v2))]
+        [(fst? e)
+         (if (apair? (fst-e e))
+             (eval-under-env (apair-e1 (fst-e e)) env)
+             (error "MUPL fst applied to non-apair"))]
+        [(snd? e)
+         (if (apair? (snd-e e))
+             (eval-under-env (apair-e2 (snd-e e)) env)
+             (error "MUPL snd applied to non-apair"))]
+        [(aunit? e) e]
+        [(isaunit? e)
+         (if (aunit? (isaunit-e e))
+             (int 1)
+             (int 0))]
+        [(mlet? e)
+         (let ([v (mlet-var e)]
+               [exp (eval-under-env (mlet-e e) env)])
+           (eval-under-env (mlet-body e) (cons (cons v exp) env)))]
+        [(call? e)
+         (let ([clos (eval-under-env (call-funexp e) env)]
+               [parm (eval-under-env (call-actual e) env)])
+           (if (closure? clos)
+               (let ([form (fun-formal (closure-fun clos))]
+                     [body (fun-body (closure-fun clos))]
+                     [envr (closure-env clos)])
+                 (eval-under-env body (cons (cons form parm) envr)))
+               (error "MUPL call applied to non-closure")))]
         [#t (error (format "bad MUPL expression: ~v" e))]))
 
 ;; Do NOT change
@@ -84,11 +117,27 @@
         
 ;; Problem 3
 
-(define (ifaunit e1 e2 e3) "CHANGE")
+(define (ifaunit e1 e2 e3)
+  (if (aunit? e1) e2 e3))
 
-(define (mlet* lstlst e2) "CHANGE")
+(define (mlet* lstlst e2)
+  (letrec ([f (lambda (lst env)
+             (if (null? lst)
+                 null
+                 (let* ([s (car (car lst))]
+                        [e (eval-under-env (cdr (car lst)) env)]
+                        [p (cons s e)])
+                   (cons p (f (cdr lst) (cons env p))))))])
+    (eval-under-env e2 (f lstlst null))))
 
-(define (ifeq e1 e2 e3 e4) "CHANGE")
+(define (ifeq e1 e2 e3 e4)
+  (let ([v1 (eval-under-env e1 null)]
+        [v2 (eval-under-env e2 null)])
+    (if (and (int? v1) (int? v2))
+        (if (= (int-num v1) (int-num v2))
+            e3
+            e4)
+        (error "ifeq e1 and/or e2 applied to non-number"))))
 
 ;; Problem 4
 
