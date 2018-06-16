@@ -57,4 +57,4 @@
 
 (require rackunit/text-ui)
 ;; runs the test
-`(run-tests tests)
+(run-tests tests)
