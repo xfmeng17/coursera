@@ -187,5 +187,3 @@
 ;; Do NOT change this
 (define (eval-exp-c e)
   (eval-under-env-c (compute-free-vars e) null))
-
-;; Add this for testing github comments in private project
