@@ -66,9 +66,8 @@
         [(fun? e) (closure env e)]
         [(closure? e) e]
         [(apair? e)
-         (let ([v1 (eval-under-env (apair-e1 e) env)]
-               [v2 (eval-under-env (apair-e2 e) env)])
-           (apair v1 v2))]
+         (apair (eval-under-env (apair-e1 e) env)
+                (eval-under-env (apair-e2 e) env))]
         [(fst? e)
          (let ([v (eval-under-env (fst-e e) env)]) 
            (if (apair? v)
@@ -81,23 +80,34 @@
                (error "MUPL snd applied to non-apair")))]
         [(aunit? e) e]
         [(isaunit? e)
-         (if (aunit? (eval-under-env (isaunit-e e) env)) (int 1)(int 0))]
+         (int (if (aunit? (eval-under-env (isaunit-e e) env)) 1 0))]
         [(mlet? e)
-         (let ([v (mlet-var e)]
+         (let* ([v (mlet-var e)]
                [exp (eval-under-env (mlet-e e) env)])
            (eval-under-env (mlet-body e) (cons (cons v exp) env)))]
+;        [(call? e)
+;         (let ([cls (eval-under-env (call-funexp e) env)])
+;           (if (closure? cls)
+;               (let* ([fun_name (fun-nameopt (closure-fun cls))]
+;                      [cls_env (closure-env cls)]
+;                      [cls_env (if fun_name (append cls_env (list (cons fun_name cls))) cls_env)]
+;                      [actual (eval-under-env (call-actual e) env)]
+;                      [formal (fun-formal (closure-fun cls))]
+;                      [cls_env (append cls_env (list (cons formal actual)))]
+;                      [fun_body (fun-body (closure-fun cls))])
+;                 (eval-under-env fun_body cls_env))
+;               (error "MUPL call applied to non-closure")))]
         [(call? e)
-         (let ([cls (eval-under-env (call-funexp e) env)])
-           (if (closure? cls)
-               (let* ([fun_name (fun-nameopt (closure-fun cls))]
-                      [cls_env (closure-env cls)]
-                      [cls_env (if fun_name (append cls_env (list (cons fun_name cls))) cls_env)]
-                      [actual (eval-under-env (call-actual e) env)]
-                      [formal (fun-formal (closure-fun cls))]
-                      [cls_env (append cls_env (list (cons formal actual)))]
-                      [fun_body (fun-body (closure-fun cls))])
-                 (eval-under-env fun_body cls_env))
-               (error "MUPL call applied to non-closure")))]
+         (let ([cl (eval-under-env (call-funexp e) env)]
+               [arg (eval-under-env (call-actual e) env)])
+           (if (closure? cl)
+               (let* ([fn (closure-fun cl)]
+                      [bodyenv (cons (cons (fun-formal fn) arg) (closure-env cl))]
+                      [bodyenv (if (fun-nameopt fn)
+                                   (cons (cons (fun-nameopt fn) cl) bodyenv)
+                                   bodyenv)])
+                 (eval-under-env (fun-body fn) bodyenv))
+               (error "MUPL function call with nonfunction")))]
         [#t (error (format "bad MUPL expression: ~v" e))]))
 
 ;; Do NOT change
@@ -109,36 +119,57 @@
 (define (ifaunit e1 e2 e3)
   (ifgreater (isaunit e1) (int 0) e2 e3))
 
-(define (mlet* lst_pair final_exp)
-  (letrec ([f (lambda (lst env)
-                (if (null? lst)
-                    null
-                    (let* ([str (car (car lst))]
-                           [val (eval-under-env (cdr (car lst)) env)]
-                           [bnd (cons str val)])
-                      (cons bnd (f (cdr lst) (cons bnd env))))))])
-    (eval-under-env final_exp (f lst_pair null))))
+;(define (mlet* lst_pair final_exp)
+;  (letrec ([f (lambda (lst env)
+;                (if (null? lst)
+;                    null
+;                    (let* ([str (car (car lst))]
+;                           [val (eval-under-env (cdr (car lst)) env)]
+;                           [bnd (cons str val)])
+;                      (cons bnd (f (cdr lst) (cons bnd env))))))])
+;    (eval-under-env final_exp (f lst_pair null))))
+(define (mlet* bs e2)
+  (cond [(null? bs) e2]
+        [#t (mlet (car (car bs)) (cdr (car bs)) (mlet* (cdr bs) e2))]))
 
+;(define (ifeq e1 e2 e3 e4)
+;  (mlet*
+;   (list (cons "_x" e1) (cons "_y" e2))
+;   (ifgreater (var "_x") (var "_y") e4 (ifgreater (var "_y") (var "_x") e4 e3))))
 (define (ifeq e1 e2 e3 e4)
-  (mlet*
-   (list (cons "_x" e1) (cons "_y" e2))
-   (ifgreater (var "_x") (var "_y") e4 (ifgreater (var "_y") (var "_x") e4 e3))))
-
+  (mlet "_x" e1
+        (mlet "_y" e2
+              (ifgreater (var "_x") (var "_y")
+                         e4
+                         (ifgreater (var "_y") (var "_x")
+                                    e4
+                                    e3)))))
 ;; Problem 4
-
+;(define mupl-map
+;  (fun #f "map_func"
+;       (fun "func" "lst"
+;            (ifaunit (var "lst")
+;                     (aunit)
+;                     (apair (call (var "map_func") (fst (var "lst")))
+;                            (call (var "func") (snd (var "lst"))))))))
 (define mupl-map
-  (fun #f "map_func"
-       (fun "func" "lst"
-            (ifaunit (var "lst")
+  (fun "map" "f"
+       (fun #f "xs"
+            (ifaunit (var "xs")
                      (aunit)
-                     (apair (call (var "map_func") (fst (var "lst")))
-                            (call (var "func") (snd (var "lst"))))))))
+                     (apair (call (var "f") (fst (var "xs")))
+                            (call (call (var "map") (var "f"))
+                                  (snd (var "xs"))))))))
 
-(define mupl-mapAddN 
+;(define mupl-mapAddN 
+;  (mlet "map" mupl-map
+;        (fun #f "i"
+;             (call (var "map")
+;                   (fun #f "x" (add (var "i") (var "x")))))))
+(define mupl-mapAddN
   (mlet "map" mupl-map
-        (fun #f "i"
-             (call (var "map")
-                   (fun #f "x" (add (var "i") (var "x")))))))
+        (fun #f "x"
+             (call (var "map") (fun #f "y" (add (var "x") (var "y")))))))
 
 ;; Challenge Problem
 
