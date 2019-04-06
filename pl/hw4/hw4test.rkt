@@ -4,9 +4,8 @@
 ;; These are basic tests. Passing these tests does not guarantee that your code will pass the actual homework grader
 
 ;; Be sure to put your homework file in the same folder as this test file.
-;; Uncomment the line below and change HOMEWORK_FILE to the name of your homework file.
+;; Uncomment the line below and change HOMEWORK_FILE to the name of your homework file.;; 
 (require "hw4.rkt")
-
 (require rackunit)
 
 ;; Helper functions
