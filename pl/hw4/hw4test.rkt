@@ -5,7 +5,8 @@
 
 ;; Be sure to put your homework file in the same folder as this test file.
 ;; Uncomment the line below and change HOMEWORK_FILE to the name of your homework file.;; 
-(require "hw4.rkt")
+;;(require "hw4.rkt")
+(require "hw4_20190406.rkt")
 (require rackunit)
 
 ;; Helper functions

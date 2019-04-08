@@ -67,4 +67,30 @@
     (f 0)))
 
 ;; 10. function cached-assoc
-                  
+(define (cached-assoc xs n)
+  (letrec ([memo (make-vector n #f)]
+           [next 0]
+           [helper (lambda (v)
+                     (let ([cached-ans (vector-assoc v memo)])
+                       (if cached-ans
+                           cached-ans
+                           (let ([list-ans (assoc v xs)])
+                             (begin
+                               (vector-set! memo next list-ans)
+                               (set! next (remainder (+ next 1) n))
+                               list-ans)))))])
+  helper))
+
+;; 11. macro (while-less e1 do e2)
+(define-syntax while-less
+  (syntax-rules (do)
+    [(while-less e1 do e2)
+     (let ([x e1])
+       (letrec ([helper (lambda ()
+                          (let ([y e2])
+                            (if (or (not (number? y)) (>= y x))
+                                #t
+                                (helper))))])
+         (helper)))]))
+                    
+        
