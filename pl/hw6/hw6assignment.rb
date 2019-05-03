@@ -31,7 +31,7 @@ class MyPiece < Piece
   end
 
   def self.cheat_piece (board)
-    MyPiece.new([[0, 0]], board)
+    MyPiece.new(rotations([[0, 0]]), board)
   end
 end
 
@@ -57,7 +57,7 @@ class MyBoard < Board
   end
 
   def cheat_piece
-    if score >= 100 and @cheatable
+    if @cheatable and score >= 100
       @current_block = MyPiece.cheat_piece(self)
       if (@current_pos != nil)
         @current_pos.each {|block| block.remove}
