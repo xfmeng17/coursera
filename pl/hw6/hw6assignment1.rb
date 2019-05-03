@@ -3,9 +3,22 @@
 # This is the only file you turn in, so do not modify the other files as
 # part of your solution.
 
+# First time write this code at 2019-05-02.
+# Not correctly understand what is "cheat" means and got best score
+# with 74/100. 
+
 class MyPiece < Piece
   # The constant All_My_Pieces should be declared here
-  All_My_Pieces = All_Pieces + [
+  All_My_Pieces = [
+    [[[0, 0], [1, 0], [0, 1], [1, 1]]],  # square (only needs one)
+    rotations([[0, 0], [-1, 0], [1, 0], [0, -1]]), # T
+    [[[0, 0], [-1, 0], [1, 0], [2, 0]], # long (only needs two)
+    [[0, 0], [0, -1], [0, 1], [0, 2]]],
+    rotations([[0, 0], [0, -1], [0, 1], [1, 1]]), # L
+    rotations([[0, 0], [0, -1], [0, 1], [-1, 1]]), # inverted L
+    rotations([[0, 0], [-1, 0], [0, -1], [1, -1]]), # S
+    rotations([[0, 0], [1, 0], [0, -1], [-1, -1]]), # Z
+
     # 3 enhancements
     # new-1 T with a extra
     rotations([[0, 0], [-1, 0], [-1, 1], [0, -1], [-1, -1]]), 
@@ -22,7 +35,7 @@ class MyPiece < Piece
   end
 
   def self.cheat_piece (board)
-    MyPiece.new([[[0, 0]]], board)
+    MyPiece.new(rotations([[0, 0]]), board)
   end
 end
 
@@ -31,7 +44,7 @@ class MyBoard < Board
   def initialize (game)
     super(game)
     @current_block = MyPiece.next_piece(self)
-    @is_cheat = false
+    @cheatable = true
   end
 
   def rotate_clockwise_twice
@@ -42,13 +55,21 @@ class MyBoard < Board
   end
 
   def next_piece
-    if @is_cheat
-      @current_block = MyPiece.cheat_piece(self)
-      @is_cheat = false
-    else
-      @current_block = MyPiece.next_piece(self)
-    end
+    @current_block = MyPiece.next_piece(self)
     @current_pos = nil
+    @cheatable = true
+  end
+
+  def cheat_piece
+    if @cheatable and score >= 100
+      @current_block = MyPiece.cheat_piece(self)
+      if (@current_pos != nil)
+        @current_pos.each {|block| block.remove}
+        @current_pos = nil
+      end
+      @score = @score - 100
+      @cheatable = false
+    end
   end
 
   def store_current
@@ -63,11 +84,11 @@ class MyBoard < Board
     @delay = [@delay - 2, 80].max
   end
 
-  def cheat
-    if @score >= 100 and !@is_cheat
-      @score -= 100
-      @is_cheat = true
+  def do_cheat
+    if !game_over? and @game.is_running?
+      cheat_piece
     end
+    draw
   end
 end
 
@@ -84,7 +105,7 @@ class MyTetris < Tetris
   def key_bindings
     super
     @root.bind('u', proc {@board.rotate_clockwise_twice})
-    @root.bind('c', proc {@board.cheat})
+    @root.bind('c', proc {@board.do_cheat})
   end
 end
 
