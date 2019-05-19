@@ -36,7 +36,7 @@ class GeometryValue
 
   private
   # some helper methods that may be generally useful
-  def real_close(r1,r2) 
+  def real_close(r1,r2)
     (r1 - r2).abs < GeometryExpression::Epsilon
   end
   def real_close_point(x1,y1,x2,y2) 
@@ -72,7 +72,10 @@ class GeometryValue
   # **CHANGE**
   # I put this in this class so all subclass can inhert it:
   # autually only subclass LineSegment sould re-implement this function
-  def preprocess_prog v
+  def eval_prog env
+    self
+  end
+  def preprocess_prog
     self
   end
 end
@@ -113,7 +116,6 @@ class NoPoints < GeometryValue
   end
 end
 
-
 class Point < GeometryValue
   # *add* methods to this class -- do *not* change given code and do not
   # override any methods
@@ -124,9 +126,6 @@ class Point < GeometryValue
   def initialize(x,y)
     @x = x
     @y = y
-  end
-  def eval_prog env 
-    self
   end
   def shift(dx, dy)
     Point.new(x + dx, y + dy)
@@ -175,6 +174,38 @@ class Line < GeometryValue
     @m = m
     @b = b
   end
+  def shift(dx, dy)
+    Line.new(m, b + dy - m * dx)
+  end
+  def intersect other
+    other.intersectLine self
+  end
+  def intersectPoint p
+    if real_close(p.y, m * p.x + b)
+      p
+    else
+      NoPoints.new
+    end
+  end
+  def intersectLine line
+    if real_close(m, line.m)
+      if real_close(b, line.b)
+        self
+      else
+        NoPoints.new
+      end
+    else
+      x = (line.b - b) / (m - line.m)
+      y = m * x + b
+      Point.new(x, y)
+    end
+  end
+  def intersectVerticalLine vline
+    Point.new(vline.x, m * vline.x + b)
+  end
+  def intersectWithSegmentAsLineResult seg
+    seg
+  end
 end
 
 class VerticalLine < GeometryValue
@@ -183,6 +214,32 @@ class VerticalLine < GeometryValue
   attr_reader :x
   def initialize x
     @x = x
+  end
+  def shift(dx, dy)
+    VerticalLine.new(x + dx)
+  end
+  def intersect other
+    other.intersectVerticalLine self
+  end
+  def intersectPoint p
+    if real_close(x, p.x)
+      p
+    else
+      NoPoints.new
+    end
+  end
+  def intersectLine line
+    Point.new(x, line.m * x + line.b)
+  end
+  def intersectVerticalLine vline
+    if real_close(x, vline.x)
+      self
+    else
+      NoPoints.new
+    end
+  end
+  def intersectWithSegmentAsLineResult seg
+    # do nothing for now
   end
 end
 
@@ -198,6 +255,101 @@ class LineSegment < GeometryValue
     @y1 = y1
     @x2 = x2
     @y2 = y2
+  end
+  def preprocess_prog
+    if real_close_point(x1, y1, x2, y2)
+      Point.new(x1, y1)
+    else
+      if x1 > x2
+        LineSegment.new(x2, y2, x1, y1)
+      else 
+        if x1 == x2 && y1 > y2
+          LineSegment.new(x2, y2, x1, y1)
+        else
+          self
+        end
+      end
+    end
+  end
+  def shift(dx, dy)
+    LineSegment.new(x1 + dx, y1 + dy, x2 + dx, y2 + dy)
+  end
+  def intersect other
+    other.intersectLineSegment self
+  end
+  def intersectPoint p
+    toline = two_points_to_line(x1, y1, x2, y2)
+    if real_close(p.y, toline.m * p.x + toline.b)
+      if p.x >= x1 && p.x <= x2
+        p
+      else
+        NoPoints.new
+      end
+    else
+      NoPoints.new
+    end
+  end
+  def intersectLine line
+    toline = two_points_to_line(x1, y1, x2, y2)
+    if real_close(toline.m, line.m) && real_close(toline.b, line.b)
+      self
+    else
+      NoPoints.new
+    end
+  end
+  def intersectVerticalLine vline
+    if (x1 <= vline.x && x2 >= vline.x)
+      m = (y2 - y1).to_f / (x2 - x1)
+      b = y1 - m * x1
+      Point.new(vline.x, m * vline.x + b)
+    else
+      NoPoints.new
+    end
+  end
+  def intersectWithSegmentAsLineResult seg
+    if real_close(x1, x2)
+      if y1 < seg.y1
+        seg1 = LineSegment.new(x1, y1, x2, y2)
+        seg2 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+      else
+        seg1 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        seg2 = LineSegment.new(x1, y1, x2, y2)
+      end
+      if real_close(seg1.y2, seg2.y1)
+        Point.new(seg1, seg1.y2)
+      else
+        if seg1.y2 < seg2.y1
+          NoPoints.new
+        else
+          if seg1.y2 >seg2.y2
+            seg2
+          else
+            LineSegment.new(seg2.x1, seg2.y1, seg1.x2, seg1.y2)
+          end
+        end
+      end
+    else
+      if x1 < seg.x1
+        seg1 = LineSegment.new(x1, y1, x2, y2)
+        seg2 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+      else
+        seg1 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        seg2 = LineSegment.new(x1, y1, x2, y2)
+      end
+      if real_close(seg1.x2, seg2.x1)
+        Point.new(seg1.x2, seg1.y2)
+      else
+        if seg1.x2 < seg2.x1
+          NoPoints.new
+        else
+          if seg1.x2 > seg2.x2
+            seg2
+          else
+            LineSegment.new(seg2.x1, seg2.y1, seg1.x2, seg1.y2)
+          end
+        end
+      end
+    end
   end
 end
 
