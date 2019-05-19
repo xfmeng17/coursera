@@ -68,6 +68,13 @@ class GeometryValue
     line_result = intersect(two_points_to_line(seg.x1,seg.y1,seg.x2,seg.y2))
     line_result.intersectWithSegmentAsLineResult seg
   end
+
+  # **CHANGE**
+  # I put this in this class so all subclass can inhert it:
+  # autually only subclass LineSegment sould re-implement this function
+  def preprocess_prog v
+    self
+  end
 end
 
 class NoPoints < GeometryValue
@@ -117,6 +124,46 @@ class Point < GeometryValue
   def initialize(x,y)
     @x = x
     @y = y
+  end
+  def eval_prog env 
+    self
+  end
+  def shift(dx, dy)
+    Point.new(x + dx, y + dy)
+  end
+  def intersect other
+    other.intersectPoint self
+  end
+  def intersectPoint p
+    if real_close_point(p.x, p.y, x, y)
+      self
+    else
+      NoPoints.new()
+    end
+  end
+  def intersectLine line
+    if real_close(y, line.m() * x + line.b())
+      self
+    else
+      NoPoints.new
+    end
+  end
+  def intersectVerticalLine vline
+    if real_close(x, vline.x())
+      self
+    else
+      NoPoints.new
+    end
+  end
+  def intersectWithSegmentAsLineResult seg
+    inbetween(x, seg.x1, seg.x2) && inbetween(y, seg.y1, seg.y2)
+  end
+  private
+  def inbetween (v, end1, end2)
+    ((end1 - GeometryExpression::Epsilon <= v) &&
+    (v <= end2 + GeometryExpression::Epsilon)) ||
+    ((end2 - GeometryExpression::Epsilon <= v) &&
+    (v <= end1 + GeometryExpression::Epsilon))
   end
 end
 
