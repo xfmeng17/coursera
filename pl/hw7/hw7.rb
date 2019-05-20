@@ -243,7 +243,7 @@ class VerticalLine < GeometryValue
     end
   end
   def intersectWithSegmentAsLineResult seg
-    # do nothing for now
+    seg
   end
 end
 
@@ -400,6 +400,7 @@ class Let < GeometryExpression
     @e2 = @e2.preprocess_prog
     self
   end
+=begin 2019-05-20 my implement 
   def eval_prog env
     e1_result = @e1.eval_prog(env)
     pr = env.assoc @s
@@ -409,6 +410,11 @@ class Let < GeometryExpression
       pr[1] = e1_result
     end
     @e2.eval_prog(env)
+  end
+=end
+  # reference
+  def eval_prog env
+    @e2.eval_prog([[@s, @e1.eval_prog(env)]] + env)
   end
 end
 
