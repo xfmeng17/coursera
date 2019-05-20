@@ -155,7 +155,11 @@ class Point < GeometryValue
     end
   end
   def intersectWithSegmentAsLineResult seg
-    inbetween(x, seg.x1, seg.x2) && inbetween(y, seg.y1, seg.y2)
+    if inbetween(x, seg.x1, seg.x2) && inbetween(y, seg.y1, seg.y2)
+      self
+    else
+      NoPoints.new
+    end
   end
   private
   def inbetween (v, end1, end2)
@@ -309,11 +313,15 @@ class LineSegment < GeometryValue
   def intersectWithSegmentAsLineResult seg
     if real_close(x1, x2)
       if y1 < seg.y1
-        seg1 = LineSegment.new(x1, y1, x2, y2)
-        seg2 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        # seg1 = LineSegment.new(x1, y1, x2, y2)
+        #seg2 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        seg1 = self
+        seg2 = seg
       else
-        seg1 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
-        seg2 = LineSegment.new(x1, y1, x2, y2)
+        # seg1 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        # seg2 = LineSegment.new(x1, y1, x2, y2)
+        seg1 = seg
+        seg2 = self
       end
       if real_close(seg1.y2, seg2.y1)
         Point.new(seg1, seg1.y2)
@@ -330,11 +338,15 @@ class LineSegment < GeometryValue
       end
     else
       if x1 < seg.x1
-        seg1 = LineSegment.new(x1, y1, x2, y2)
-        seg2 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        # seg1 = LineSegment.new(x1, y1, x2, y2)
+        # seg2 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        seg1 = self
+        seg2 = seg
       else
-        seg1 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
-        seg2 = LineSegment.new(x1, y1, x2, y2)
+        # seg1 = LineSegment.new(seg.x1, seg.y1, seg.x2, seg.y2)
+        # seg2 = LineSegment.new(x1, y1, x2, y2)
+        seg1 = seg
+        seg2 = self
       end
       if real_close(seg1.x2, seg2.x1)
         Point.new(seg1.x2, seg1.y2)
